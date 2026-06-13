@@ -1,0 +1,441 @@
+/* --- CONFIGURACIÓN GENERAL --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    overflow: hidden; /* Evita scrolls accidentales en la ventana */
+}
+
+.game-container {
+    max-width: 1300px;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+/* Header */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.logo-section h1 {
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+.logo-section span {
+    color: #f9a826;
+}
+
+.score-section {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.score-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px 16px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.score-label {
+    font-size: 0.65rem;
+    color: #8e9bb0;
+    letter-spacing: 1px;
+}
+
+.score-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #f9a826;
+}
+
+.reset-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.reset-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- ÁREA DE PILAS (COLUMNAS ESTILO SOLITARIO) --- */
+.columns-area {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 800px;
+    height: 58vh; /* Altura máxima exacta para no generar scroll */
+    margin: 0 auto;
+    flex-grow: 1;
+}
+
+.column {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: visible; /* Clave para el efecto flotante y visual de las cartas */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.column:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.column-cards {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    padding: 12px 6px;
+}
+
+/* --- CARTAS DEL JUEGO (APILADAS EN CASCADA) --- */
+.card {
+    width: 85%;
+    max-width: 95px;
+    aspect-ratio: 3 / 4;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.2s;
+    
+    /* 32px de solapamiento permite acumular las 8 cartas en la pantalla sin desbordar */
+    top: calc(12px + (var(--card-index) * 32px));
+    z-index: var(--card-index);
+}
+
+.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+}
+
+/* Efecto Hover solo en la última carta de la pila (la interactiva) */
+.card:last-child:hover {
+    transform: translateX(-50%) translateY(-4px);
+    box-shadow: 0 8px 20px rgba(249, 168, 38, 0.4);
+}
+
+/* Animación de Fusión Borrada (Clear) */
+.card.clear {
+    animation: cardDisappear 0.25s forwards ease-in;
+}
+
+@keyframes cardDisappear {
+    0% { transform: translateX(-50%) scale(1); opacity: 1; }
+    100% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+}
+
+/* --- CONTROLADORES INFERIORES: DECK QUEUE Y DISCARD --- */
+.controls-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 45px;
+    padding: 16px 0;
+    margin-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.deck-container {
+    width: auto; /* Permite que se expanda horizontalmente para albergar el texto */
+    height: 110px;
+    position: relative;
+    display: flex;
+    align-items: center; /* Centra verticalmente el texto respecto a las cartas */
+    gap: 20px; /* Espacio de separación entre el texto informativo y el mazo */
+}
+
+.deck-queue {
+    position: relative;
+    width: 150px;
+    height: 100%;
+    order: 2; /* Fuerza a que las cartas se dibujen a la derecha del texto */
+}
+
+/* Estilo de la cola en cascada horizontal */
+.deck-card {
+    width: 80px;
+    aspect-ratio: 3 / 4;
+    border-radius: 12px;
+    position: absolute;
+    bottom: 0;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: -4px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Primera en línea (Carta Activa) */
+.deck-card[data-queue-index="0"] {
+    left: 45px;
+    z-index: 3;
+    transform: scale(1);
+    filter: brightness(1);
+}
+
+/* Segunda en línea */
+.deck-card[data-queue-index="1"] {
+    left: 22px;
+    z-index: 2;
+    transform: scale(0.9);
+    filter: brightness(0.75);
+}
+
+/* Tercera en línea (Al fondo) */
+.deck-card[data-queue-index="2"] {
+    left: 0px;
+    z-index: 1;
+    transform: scale(0.8);
+    filter: brightness(0.55);
+}
+
+/* --- BOTÓN DE DESCARTE INTERACTIVO --- */
+.discard-btn {
+    position: relative;
+    width: 80px;
+    aspect-ratio: 3 / 4;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s;
+}
+
+.discard-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+}
+
+.discard-btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.discard-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.discard-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+    font-weight: bold;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease;
+}
+
+.discard-text {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.discard-subtext {
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin: 4px 0;
+}
+
+/* --- ESTADOS DINÁMICOS DEL COMODÍN DE DESCARTE (LLENADO ROJO) --- */
+
+/* Usado 1 vez: Degradado rojo al 50% vertical */
+.discard-btn[data-uses="1"] .discard-overlay {
+    background: linear-gradient(to top, rgba(230, 57, 70, 0.85) 50%, rgba(0, 0, 0, 0.4) 50%);
+}
+
+/* Usado 2 veces: Bloqueo y tinte rojo completo */
+.discard-btn[data-uses="2"] .discard-overlay {
+    background: rgba(230, 57, 70, 0.95);
+}
+
+.discard-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+/* --- OVERLAY DE GAME OVER (VENTANA EMERGENTE) --- */
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 26, 46, 0.95);
+    z-index: 1000;
+    display: none; /* Controlado desde JS cambiando a 'flex' */
+    justify-content: center;
+    align-items: center;
+}
+
+.game-over-modal {
+    background: #16213e;
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.game-over-modal h2 {
+    font-size: 2.2rem;
+    color: #e63946;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+
+.game-over-modal p {
+    color: #8e9bb0;
+    margin-bottom: 20px;
+}
+
+.final-score {
+    font-size: 1.4rem;
+    margin-bottom: 30px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+
+.final-score span {
+    color: #f9a826;
+}
+
+.play-again-btn {
+    background: #f9a826;
+    color: #1a1a2e;
+    border: none;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.play-again-btn:hover {
+    transform: scale(1.03);
+    background: #ffb74d;
+}
+
+/* --- EFECTOS VISUALES PARA EL DRAG & DROP --- */
+
+/* Estado de la carta original en el mazo mientras la estás arrastrando */
+.deck-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+    box-shadow: none;
+    transition: opacity 0.1s ease;
+}
+
+/* Estado de la columna cuando la carta se posiciona encima */
+.column.drag-over {
+    background: rgba(249, 168, 38, 0.12) !important; /* Tinte naranja/dorado de fondo */
+    border-color: rgba(249, 168, 38, 0.5) !important; /* Borde brillante */
+    box-shadow: inset 0 0 15px rgba(249, 168, 38, 0.2);
+    transform: scale(1.01);
+    transition: all 0.15s ease;
+}
+
+.drag-hint {
+    position: static;
+    transform: none; 
+    order: 1; 
+    font-size: 0.8rem;
+    color: #8e9bb0;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    max-width: 180px;
+    white-space: normal; 
+    text-align: right; 
+    pointer-events: none;
+}
+
+/* --- MARCADOR DE COLUMNA LLENA e INACTIVIDAD --- */
+
+/* Contenedor de la columna cuando ya no permite interactuar */
+.column.column-disabled {
+    background: rgba(230, 57, 70, 0.15) !important; /* Tinte rojo sutil */
+    border-color: rgba(230, 57, 70, 0.4) !important;
+    cursor: not-allowed !important;
+    pointer-events: none; /* Desactiva clics por completo en la columna */
+}
+
+/* Opacamos ligeramente las cartas de la columna bloqueada */
+.column.column-disabled .card {
+    filter: grayscale(0.3) brightness(0.7);
+    cursor: not-allowed;
+}
+
+/* Marcador flotante de advertencia "⚠️ LLENA" */
+.column-full-badge {
+    position: absolute;
+    top: -15px; /* Flota ligeramente arriba de la columna */
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e63946;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(230, 57, 70, 0.5);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    z-index: 100; /* Asegura que se vea por encima de las cartas */
+    animation: bounceBadge 0.5s ease-out;
+}
+
+/* Animación de entrada rápida para el marcador */
+@keyframes bounceBadge {
+    0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
+    70% { transform: translateX(-50%) scale(1.1); }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}

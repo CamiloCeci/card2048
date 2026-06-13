@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Solitario 2048 - Fusión de Cartas</title>
+    <link rel="stylesheet" href="../Styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header con marcador y controles -->
+        <div class="game-header">
+            <div class="logo-section">
+                <h1>Solitario <span>2048</span></h1>
+            </div>
+            <div class="score-section">
+                <div class="score-box">
+                    <div class="score-label">PUNTOS</div>
+                    <div class="score-value" id="scoreValue">0</div>
+                </div>
+                <button class="reset-btn" id="resetBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                        <path d="M16 21h5v-5"/>
+                    </svg>
+                    Reiniciar
+                </button>
+            </div>
+        </div>
+
+        <!-- Área de juego: 4 columnas -->
+        <div class="columns-area" id="columnsArea">
+            <div class="column" data-column-index="0">
+                <div class="column-cards" id="column0"></div>
+            </div>
+            <div class="column" data-column-index="1">
+                <div class="column-cards" id="column1"></div>
+            </div>
+            <div class="column" data-column-index="2">
+                <div class="column-cards" id="column2"></div>
+            </div>
+            <div class="column" data-column-index="3">
+                <div class="column-cards" id="column3"></div>
+            </div>
+        </div>
+
+        <!-- Mazo: Carta actual a jugar (compacto) -->
+        <div class="controls-area">
+            <div class="deck-container">
+                <div id="deckQueue" class="deck-queue"></div>
+                <div class="drag-hint">🖱️ Haz clic o arrastra la carta sobre la columna</div>
+            </div>
+            
+            <button id="discardButton" class="discard-btn" data-uses="0">
+                <div class="discard-overlay">
+                    <span class="discard-text">X</span>
+                    <span class="discard-subtext">DISCARD</span>
+                    <span class="discard-text">X</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Mensaje de Game Over -->
+        <div class="game-over-overlay" id="gameOverOverlay" style="display: none;">
+            <div class="game-over-modal">
+                <h2>💀 GAME OVER 💀</h2>
+                <p>Superaste el límite de 8 cartas en todas las columnas</p>
+                <div class="final-score">Puntuación final: <span id="finalScore">0</span></div>
+                <button class="play-again-btn" id="playAgainBtn">Jugar de nuevo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../Js/script.js"></script>
+</body>
+</html>
