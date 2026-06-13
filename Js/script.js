@@ -4,17 +4,17 @@
 const MAX_CARDS_PER_COLUMN = 8;
 const TARGET_VALUE = 2048;
 const CARD_IMAGES = {
-    2: 'card2048/cartas/carta1.png',
-    4: 'card2048/cartas/carta2.png',
-    8: 'card2048/cartas/carta3.png',
-    16: 'card2048/cartas/carta4.png',
-    32: 'card2048/cartas/carta5.png',
-    64: 'card2048/cartas/carta6.png',
-    128: 'card2048/cartas/carta7.png',
-    256: 'card2048/cartas/carta8.png',
-    512: 'card2048/cartas/carta9.png',
-    1024: 'card2048/cartas/carta10.png',
-    2048: 'card2048/cartas/carta11.png'
+    2: 'cartas/carta1.png',
+    4: 'cartas/carta2.png',
+    8: 'cartas/carta3.png',
+    16: 'cartas/carta4.png',
+    32: 'cartas/carta5.png',
+    64: 'cartas/carta6.png',
+    128: 'cartas/carta7.png',
+    256: 'cartas/carta8.png',
+    512: 'cartas/carta9.png',
+    1024: 'cartas/carta10.png',
+    2048: 'cartas/carta11.png'
 };
 
 // --- ESTADO DEL JUEGO ---
@@ -49,7 +49,7 @@ function generateRandomCard() {
 }
 
 function getCardImage(value) {
-    return CARD_IMAGES[value] || 'card2048/cartas/carta1.png'; 
+    return CARD_IMAGES[value] || 'cartas/carta1.png'; 
 }
 
 // --- INICIALIZACIÓN Y CONTROL DEL MAZO ---
