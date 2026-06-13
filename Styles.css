@@ -439,3 +439,135 @@ body {
     70% { transform: translateX(-50%) scale(1.1); }
     100% { transform: translateX(-50%) scale(1); opacity: 1; }
 }
+
+/* ==========================================================================
+   OPTIMIZACIONES PARA DISPOSITIVOS MÓVILES (RESPONSIVE)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    body {
+        padding: 6px; /* Reducimos el margen externo */
+    }
+
+    .game-container {
+        padding: 10px;
+        border-radius: 16px;
+    }
+
+    /* Reducimos el tamaño del título y los marcadores */
+    .logo-section h1 {
+        font-size: 1.1rem;
+    }
+    
+    .score-value {
+        font-size: 1rem;
+    }
+    
+    .score-box {
+        padding: 4px 10px;
+    }
+
+    /* Reducimos la brecha entre columnas para darles aire horizontal */
+    .columns-area {
+        gap: 6px;
+        height: 52vh; /* Ajustamos la altura proporcional de las pilas */
+    }
+
+    .column {
+        border-radius: 10px;
+    }
+
+    .column-cards {
+        padding: 8px 3px;
+    }
+
+    /* --- AJUSTE CRÍTICO DE CASCADA EN MÓVIL --- */
+    .card {
+        width: 92%; /* Aprovecha un poco más el ancho de la columna */
+        border-radius: 8px;
+        /* En móviles disminuimos el solapamiento a 24px para evitar desbordes */
+        top: calc(8px + (var(--card-index) * 24px));
+    }
+    
+    .card img {
+        border-radius: 8px;
+    }
+
+    /* Ajuste del cartel flotante "⚠️ LLENA" */
+    .column-full-badge {
+        font-size: 0.6rem;
+        padding: 2px 6px;
+        top: -12px;
+    }
+
+    /* --- SECCIÓN DE CONTROLES INFERIORES EN MÓVIL --- */
+    .controls-area {
+        gap: 15px; /* Reducimos la distancia horizontal */
+        padding: 10px 0;
+        flex-direction: row;
+        justify-content: space-evenly;
+    }
+
+    /* Hacemos que el contenedor flex del mazo use columnas para texto arriba/carta abajo */
+    .deck-container {
+        gap: 8px;
+        height: 95px;
+    }
+
+    .deck-queue {
+        width: 110px; /* Reducimos el ancho del mazo tridimensional */
+    }
+
+    .deck-card {
+        width: 60px; /* Cartas del mazo más compactas */
+        border-radius: 8px;
+    }
+
+    /* Ajuste de posiciones de la cola tridimensional en pantallas pequeñas */
+    .deck-card[data-queue-index="0"] { left: 35px; }
+    .deck-card[data-queue-index="1"] { left: 18px; }
+    .deck-card[data-queue-index="2"] { left: 0px; }
+
+    /* Texto descriptivo: más pequeño y centrado arriba de su mazo */
+    .drag-hint {
+        font-size: 0.65rem;
+        max-width: 120px;
+        text-align: center;
+    }
+
+    /* Botón de descarte adaptado a pantallas táctiles */
+    .discard-btn {
+        width: 60px;
+        border-radius: 8px;
+    }
+
+    .discard-text {
+        font-size: 16px;
+    }
+
+    .discard-subtext {
+        font-size: 7px;
+    }
+}
+
+/* Optimización extra para teléfonos extra pequeños (pantallas muy cortas) */
+@media (max-height: 660px) and (max-width: 768px) {
+    .columns-area {
+        height: 48vh;
+    }
+    .card {
+        top: calc(6px + (var(--card-index) * 20px)); /* Aún más compactado verticalmente */
+    }
+}
+
+/* --- CLON FLOTANTE PARA EL ARRASTRE TÁCTIL EN MÓVILES --- */
+.touch-card-drag-clone {
+    position: fixed; /* Flota sobre toda la interfaz */
+    width: 60px;     /* Mismo tamaño exacto que las cartas del mazo en celular */
+    aspect-ratio: 3 / 4;
+    z-index: 9999;   /* Capa suprema por encima de menús y columnas */
+    pointer-events: none; /* Crucial para que document.elementFromPoint pueda leer lo que hay abajo */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    transform: scale(1.1); /* Efecto visual sutil de que la carta se "levanta" */
+    transition: transform 0.1s ease;
+}

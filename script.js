@@ -280,48 +280,203 @@ function checkGameOver() {
 // --- CONTROLADORES DE EVENTOS ---
 
 function setupEventListeners() {
+    // --- VARIABLES DE CONTROL TÁCTIL (MÓVIL) ---
+    let touchCardClone = null;
+    let activeTouchCardData = null;
+
+    // 1. Configuración de interacción y zonas de soltado sobre las columnas
     document.querySelectorAll('.column').forEach(columnEl => {
         const columnIndex = parseInt(columnEl.getAttribute('data-column-index'));
         
-        // Mantener la interacción por Click clásico
+        // Clic clásico de escritorio
         columnEl.addEventListener('click', () => {
             placeCard(columnIndex);
         });
         
-        // DRAG & DROP EVENTS:
-        
-        // Permitir el drop anulando el comportamiento por defecto del navegador
+        // --- DRAG & DROP ESCRITORIO (MOUSE) ---
         columnEl.addEventListener('dragover', (e) => {
             if (!gameActive || columns[columnIndex].length >= MAX_CARDS_PER_COLUMN) return;
             e.preventDefault(); 
             e.dataTransfer.dropEffect = 'move';
         });
         
-        // Cuando la carta entra visualmente en el área de la columna
         columnEl.addEventListener('dragenter', (e) => {
             if (!gameActive || columns[columnIndex].length >= MAX_CARDS_PER_COLUMN) return;
             columnEl.classList.add('drag-over');
         });
         
-        // Cuando la carta sale del área de la columna sin soltarse
         columnEl.addEventListener('dragleave', () => {
             columnEl.classList.remove('drag-over');
         });
         
-        // Cuando finalmente se suelta la carta sobre la columna
         columnEl.addEventListener('drop', (e) => {
             e.preventDefault();
             columnEl.classList.remove('drag-over');
-            
             const dragData = e.dataTransfer.getData('text/plain');
             if (dragData === 'solitaire-card') {
                 placeCard(columnIndex);
             }
         });
     });
-    
+
+    // --- NUEVA LÓGICA: DRAG & DROP EN ESCRITORIO PARA EL BOTÓN DE DESCARTE ---
+    if (discardButton) {
+        // Permitir el drop anulando el comportamiento por defecto si no está lleno
+        discardButton.addEventListener('dragover', (e) => {
+            if (!gameActive || discardUses >= MAX_DISCARD_USES) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        // Efecto visual cuando la carta pasa encima del botón de descarte
+        discardButton.addEventListener('dragenter', () => {
+            if (!gameActive || discardUses >= MAX_DISCARD_USES) return;
+            discardButton.style.transform = 'scale(1.1)';
+            discardButton.style.boxShadow = '0 0 15px rgba(230, 57, 70, 0.6)';
+        });
+
+        // Restaurar el efecto visual si la carta sale sin soltarse
+        discardButton.addEventListener('dragleave', () => {
+            discardButton.style.transform = '';
+            discardButton.style.boxShadow = '';
+        });
+
+        // Al soltar la carta sobre el botón
+        discardButton.addEventListener('drop', (e) => {
+            e.preventDefault();
+            discardButton.style.transform = '';
+            discardButton.style.boxShadow = '';
+            
+            const dragData = e.dataTransfer.getData('text/plain');
+            if (dragData === 'solitaire-card') {
+                handleDiscard();
+            }
+        });
+    }
+
+    // 2. EMULACIÓN DE ARRASTRE TÁCTIL (MÓVILES) EN EL CONTENEDOR DEL MAZO
+    if (deckQueueElement) {
+        // Al tocar la pantalla
+        deckQueueElement.addEventListener('touchstart', (e) => {
+            if (!gameActive || cardQueue.length === 0) return;
+            
+            const targetCard = e.target.closest('.deck-card[data-queue-index="0"]');
+            if (!targetCard) return;
+
+            e.preventDefault();
+
+            const cardValue = cardQueue[0];
+            activeTouchCardData = { value: cardValue, originalElement: targetCard };
+            targetCard.style.opacity = '0.3';
+
+            touchCardClone = document.createElement('div');
+            touchCardClone.className = 'touch-card-drag-clone';
+            
+            const img = document.createElement('img');
+            img.src = getCardImage(cardValue);
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.borderRadius = '12px';
+            
+            touchCardClone.appendChild(img);
+            document.body.appendChild(touchCardClone);
+
+            const touch = e.touches[0];
+            moveClone(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        // Al mover el dedo por la pantalla
+        deckQueueElement.addEventListener('touchmove', (e) => {
+            if (!touchCardClone) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            moveClone(touch.clientX, touch.clientY);
+
+            // Verificamos qué elemento hay bajo el dedo
+            const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // 1. Verificar si pasa sobre columnas
+            const columnEl = elementUnderTouch ? elementUnderTouch.closest('.column') : null;
+            document.querySelectorAll('.column').forEach(col => col.classList.remove('drag-over'));
+            
+            if (columnEl) {
+                const idx = parseInt(columnEl.getAttribute('data-column-index'));
+                if (columns[idx].length < MAX_CARDS_PER_COLUMN) {
+                    columnEl.classList.add('drag-over');
+                }
+            }
+
+            // 2. Verificar si pasa sobre el botón de descarte (Móvil)
+            const isOverDiscard = elementUnderTouch ? elementUnderTouch.closest('#discardButton') : null;
+            if (isOverDiscard && discardUses < MAX_DISCARD_USES) {
+                discardButton.style.transform = 'scale(1.1)';
+                discardButton.style.boxShadow = '0 0 15px rgba(230, 57, 70, 0.6)';
+            } else {
+                discardButton.style.transform = '';
+                discardButton.style.boxShadow = '';
+            }
+        }, { passive: false });
+
+        // Al levantar el dedo de la pantalla
+        deckQueueElement.addEventListener('touchend', (e) => {
+            if (!touchCardClone) return;
+
+            const touch = e.touches[0] || e.changedTouches[0];
+            const elementUnderTouch = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // Comprobamos los objetivos
+            const columnEl = elementUnderTouch ? elementUnderTouch.closest('.column') : null;
+            const isOverDiscard = elementUnderTouch ? elementUnderTouch.closest('#discardButton') : null;
+
+            // Limpiamos estilos visuales de arrastre
+            document.querySelectorAll('.column').forEach(col => col.classList.remove('drag-over'));
+            if (discardButton) {
+                discardButton.style.transform = '';
+                discardButton.style.boxShadow = '';
+            }
+
+            let actionExecuted = false;
+
+            // SI SE SOLTÓ EN EL BOTÓN DE DESCARTE
+            if (isOverDiscard && discardUses < MAX_DISCARD_USES) {
+                handleDiscard();
+                actionExecuted = true;
+            } 
+            // SI SE SOLTÓ EN UNA COLUMNA
+            else if (columnEl) {
+                const columnIndex = parseInt(columnEl.getAttribute('data-column-index'));
+                if (columns[columnIndex].length < MAX_CARDS_PER_COLUMN) {
+                    actionExecuted = placeCard(columnIndex);
+                }
+            }
+
+            // Si se soltó en la nada, restauramos la opacidad de la carta original
+            if (!actionExecuted && activeTouchCardData && activeTouchCardData.originalElement) {
+                activeTouchCardData.originalElement.style.opacity = '1';
+            }
+
+            if (touchCardClone) {
+                touchCardClone.remove();
+                touchCardClone = null;
+            }
+            activeTouchCardData = null;
+        });
+    }
+
+    function moveClone(x, y) {
+        if (!touchCardClone) return;
+        touchCardClone.style.left = `${x - 30}px`;
+        touchCardClone.style.top = `${y - 40}px`;
+    }
+
+    // --- ENLACES CLÁSICOS DE TOUCH Y CLICK ---
     if (discardButton) {
         discardButton.addEventListener('click', handleDiscard);
+        discardButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleDiscard();
+        }, { passive: false });
     }
     if (resetBtn) {
         resetBtn.addEventListener('click', resetGame);
